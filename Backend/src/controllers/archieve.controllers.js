@@ -20,25 +20,11 @@ export const addArchieve = AsyncHandler(async (req, res) => {
 
 export const getArchieve = AsyncHandler(async (req, res) => {
   try {
-    const aggregateData = await Notes.aggregate(
-      [
-      {
-        $match: { isArchieved: true },
-      },
-      {
-        $lookup: {
-          from: "archieves", // Name of the second collection
-          localField: "_id", // Field from the first collection
-          foreignField: "noteId", // Field from the second collection
-          as: "archieveData", // Alias for the result
-        },
-      },
-    ]
-  ).exec();
-    const archieve = await Archieve.find(); // Retrieve all data from the Archieve collection
 
-    console.log(aggregateData);
-    res.status(200).json(aggregateData);
+    const archieve = await Archieve.find({userId: req.userId}); // Retrieve all data from the Archieve collection
+
+    console.log(archieve);
+    res.status(200).json(archieve);
   } catch (error) {
     console.error("Error occurred while getting data", error);
     res.status(500).json({ message: "Internal Server Error" });

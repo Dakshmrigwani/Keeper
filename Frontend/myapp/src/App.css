@@ -119,6 +119,9 @@ body {
   max-width: calc(100% - 55%);
   width: 100%;
 }
+.max-modalimg{
+  max-height:200px
+}
 .minner b {
   color: var(--text-primary) !important;
 }

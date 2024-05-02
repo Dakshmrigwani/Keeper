@@ -77,6 +77,7 @@ export const login = AsyncHandler(async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
       existedUser._id
     );
+    
     // Find the logged-in user by their _id, excluding password and refreshToken fields
 
     const loggedInUser = await User.findById(existedUser._id).select(
@@ -86,9 +87,8 @@ export const login = AsyncHandler(async (req, res) => {
     // Configuration options for the cookies
     const options = {
       httpOnly: true, // Cookie is not accessible via JavaScript
-      secure: true, // Cookie will only be sent over HTTPS
+      secure: false, // Cookie will only be sent over HTTPS
     };
-    console.log(res);
     return res
       .status(200)
       .cookie("accessToken", accessToken, options)

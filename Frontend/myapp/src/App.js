@@ -24,7 +24,7 @@ function App() {
     <div className={`App ${theme}`}>
       <Router>
         <Routes>
-          <Route path="/" element={<Note />} />
+          <Route path="/" element={<Login />} />
           <Route path="/Note" element={<Note />} />
           <Route path="/Trash" element={<Trash />} />
           <Route path="/Reminder" element={<Reminder />} />

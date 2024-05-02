@@ -36,6 +36,7 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [modalContents, setModalContents] = useState([]);
   const [modalContentsMain, setModalContentsMain] = useState([]);
+  const [modalImage , setModalImage] = useState([])
   const [createdModal, setCreatedModal] = useState([]);
 
   const handleShow = (index) => {
@@ -59,6 +60,7 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
     setModalContents(notesArray.map((item) => item.title));
     setModalContentsMain(notesArray.map((item) => item.main));
     setCreatedModal(notesArray.map((item) => item.createdAt));
+    setModalImage(notesArray.map((item) => item.image));
     console.log("notesArray", notesArray);
   }, [notesArray]);
   const deleter = () => {
@@ -300,6 +302,10 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
                 value={modalContentsMain[index]} // This is for main content
                 onChange={(e) => UpdateMainContent(e, index)} // Separate function for main content
               />
+              <a href={modalImage[index]} target="_blank">
+              <img src={modalImage[index]} className="w-100 h-100 max-modalimg object-fit-cover"/>
+              </a>
+              
             </Modal.Body>
             <Modal.Footer>
               <div className="">

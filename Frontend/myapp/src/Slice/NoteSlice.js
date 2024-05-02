@@ -13,11 +13,25 @@ const initialState = {
   response: "",
 };
 
-export const fetchNotes = createAsyncThunk("note/getNotes", async (data) => {
-  const response = await axios.get(`${notesapi}/getNote`, data);
-  console.log(response.data);
-  return response.data;
-});
+const getToken = () => localStorage.getItem("accessToken");
+
+export const fetchNotes = createAsyncThunk(
+  "note/getNotes",
+  async (_, thunkAPI) => {
+    try {
+      const response = await axios.get(`${notesapi}/getNote`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`, // Include token in headers
+        },
+      });
+      console.log("response.data" , response.data);
+      return response.data;
+      
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response.data); // Handle error
+    }
+  }
+);
 
 export const addNotes = createAsyncThunk(
   "notes/addNote",
@@ -27,7 +41,7 @@ export const addNotes = createAsyncThunk(
       formData.append("title", title);
       formData.append("main", main);
       formData.append("image", image);
-      console.log(formData)
+      console.log(formData);
 
       const response = await axios.post(`${notesapi}/addNote`, formData, {
         headers: {

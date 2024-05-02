@@ -3,16 +3,20 @@ import { Notes } from "../models/notes.models.js";
 import { Archieve} from "../models/archieve.models.js"
 import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+
+
+
 export const addNote = AsyncHandler(async (req, res) => {
   try {
     const { title, main } = req.body;
-    const imageFile = req.files['image'][0]; // Retrieve the uploaded image file
-    console.log("Image File:", imageFile); // Log the uploaded image file
 
     let imageURL = null;
 
     // Check if an image file was uploaded
-    if (imageFile) {
+    if (req.files && req.files['image']) {
+      const imageFile = req.files['image'][0]; // Retrieve the uploaded image file
+      console.log("Image File:", imageFile); // Log the uploaded image file
+
       // Upload the image to Cloudinary and get the URL
       const cloudinaryUploadResult = await uploadOnCloudinary(imageFile.path);
       console.log("Cloudinary Upload Result:", cloudinaryUploadResult); // Log the Cloudinary upload result
@@ -41,10 +45,11 @@ export const addNote = AsyncHandler(async (req, res) => {
   }
 });
 
+
 export const getAllNotes = AsyncHandler(async (req, res) => {
   try {
-    const {userId} = req.body
-    const allNotes = await Notes.find({ isArchieved: { $ne: true } });
+    // const {userId} = req.body
+    const allNotes = await Notes.find({ userId: req.userId });
     res.status(200).json(allNotes);
   } catch (err) {
     res.status(404).json("cannot get all data");

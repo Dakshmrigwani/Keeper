@@ -9,6 +9,7 @@ import { userapi } from "../api";
 import axios from "axios";
 import { useAuth0 } from "@auth0/auth0-react";
 import { FaGoogle } from "react-icons/fa";
+import axiosInstance from "./axiosInstance";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -37,19 +38,24 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(`${userapi}/login`, {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `${userapi}/login`,
+        {
+          email,
+          password,
+        },
+        {withCredentials: true}
+      
+      );
       console.log(response);
       if (response.status === 200) {
         // Extract tokens from the response data
         const { accessToken, refreshToken } = response.data.data;
-        
+
         // Store tokens in localStorage or any state management solution
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
-  
+
         // Redirect to the desired page
         Navigate("/Note");
       }
@@ -60,7 +66,7 @@ export default function Login() {
       console.error("Login failed:", error);
     }
   };
-  
+
   return (
     <>
       <div className="d-flex justify-content-center align-items-center h-100 flex-column">
@@ -83,7 +89,6 @@ export default function Login() {
                   handleLogin(); // Call the handleLogin function
                 }}
               >
-                
                 <Form.Group className="mb-3" controlId="email">
                   <Form.Label>Email</Form.Label>
                   <Form.Control
@@ -102,11 +107,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </Form.Group>
-                <button
-                  className="btn btn-primary w-100"
-                  type="submit"
-                 
-                >
+                <button className="btn btn-primary w-100" type="submit">
                   Submit
                 </button>
                 <div className="mt-3 d-flex flex-column  justify-content-center align-items-center">
