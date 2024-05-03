@@ -23,7 +23,7 @@ export default function Login() {
 
   const handleRegister = async () => {
     try {
-      const response = await axios.post(`${userapi}/register`, {
+      const response = await axiosInstance.post(`${userapi}/register`, {
         email,
         password,
         confirmPassword,
@@ -38,7 +38,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         `${userapi}/login`,
         {
           email,

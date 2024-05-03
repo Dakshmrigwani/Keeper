@@ -2,6 +2,7 @@
   "name": "myapp",
   "version": "0.1.0",
   "private": true,
+  "proxy":"http://localhost:8080/api/v1",
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
     "@dnd-kit/core": "^6.1.0",

@@ -1,5 +1,6 @@
 import { createSlice, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
 import { notesapi, archieveapi } from "../api";
+import axiosInstance from "../Pages/axiosInstance";
 import axios from "axios";
 
 // Initial state with notesArray, PinnedArray, and FilteredArray
@@ -19,7 +20,7 @@ export const fetchNotes = createAsyncThunk(
   "note/getNotes",
   async (_, thunkAPI) => {
     try {
-      const response = await axios.get(`${notesapi}/getNote`, {
+      const response = await axiosInstance.get(`${notesapi}/getNote`, {
         headers: {
           Authorization: `Bearer ${getToken()}`, // Include token in headers
         },
@@ -43,7 +44,7 @@ export const addNotes = createAsyncThunk(
       formData.append("image", image);
       console.log(formData);
 
-      const response = await axios.post(`${notesapi}/addNote`, formData, {
+      const response = await axiosInstance.post(`${notesapi}/addNote`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -58,7 +59,7 @@ export const updateNote = createAsyncThunk(
   "notes/updateNote",
   async ({ id, newTitle, newText }) => {
     try {
-      const response = await axios.put(`${notesapi}/UpdateNote/${id}`, {
+      const response = await axiosInstance.put(`${notesapi}/UpdateNote/${id}`, {
         title: newTitle,
         main: newText,
       });
@@ -71,7 +72,7 @@ export const updateNote = createAsyncThunk(
 
 export const deleteNote = createAsyncThunk("notes/deleteNote ", async (_id) => {
   try {
-    await axios.delete(`${notesapi}/deleteNote/${_id}`);
+    await axiosInstance.delete(`${notesapi}/deleteNote/${_id}`);
     return _id; // Return _id upon successful deletion
   } catch (error) {
     throw error;
@@ -82,7 +83,7 @@ export const archiveNote = createAsyncThunk(
   "notes/archiveNote",
   async (_id) => {
     try {
-      const response = await axios.patch(`${notesapi}/${_id}/archive/`);
+      const response = await axiosInstance.patch(`${notesapi}/${_id}/archive/`);
       console.log(response.data);
       return response.data;
     } catch (error) {
@@ -96,7 +97,7 @@ export const archiveNote = createAsyncThunk(
 export const unarchiveNote = createAsyncThunk(
   "notes/unarchiveNote",
   async (_id) => {
-    const response = await axios.put(`${notesapi}/${_id}/unarchive/`);
+    const response = await axiosInstance.put(`${notesapi}/${_id}/unarchive/`);
     return response.data;
   }
 );
