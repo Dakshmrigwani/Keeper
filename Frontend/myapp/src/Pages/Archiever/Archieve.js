@@ -7,41 +7,102 @@ import { FaTrashAlt, FaTrash } from "react-icons/fa";
 import Popover from "react-bootstrap/Popover";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
-import { addDataArchieve } from "../../Slice/ArchieveSlice";
+import { addDataArchieve, fetchArchieve } from "../../Slice/ArchieveSlice";
 import { IoTrashBinSharp } from "react-icons/io5";
 import { ThemeContext } from "../../Context/ThemeContext";
 import { LuRedo2, LuUndo2 } from "react-icons/lu";
 import { FaBell, FaPalette } from "react-icons/fa";
+import { updateNote } from "../../Slice/NoteSlice";
 import { PiArchiveBox } from "react-icons/pi";
+import { archieveapi, notesapi } from "../../api";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import Modal from "react-bootstrap/Modal";
 import TextareaAutosize from "react-textarea-autosize";
+import axios from "axios";
 import {
   MdPhotoSizeSelectActual,
   MdPeople,
   MdOutlinePushPin,
 } from "react-icons/md";
-import { addData } from "../../Slice/TrashSlice";
+// import { addData } from "../../Slice/TrashSlice";
 
 export default function Archieve() {
-  const archieveArray = useSelector((state) => state.archieve.archieveArray);
+  const [data, setData] = useState([]);
+  // const notesArray = useSelector((state) => state.note.notesArray);
   const { theme } = useContext(ThemeContext);
   const dispatch = useDispatch();
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [modalContents, setModalContents] = useState([]);
+  const [modalMain, setModalMain] = useState([]);
+  const [modalImage, setModalImage] = useState([]);
+  const [modalId, setModalId] = useState();
 
-  const handleShow = (index) => {
+  const handleShow = (index, modalId) => {
     setSelectedItemIndex(index);
+    
+  };
+
+  const UpdateTitle = (e, index) => {
+    const newData = [...data];
+    newData[index].title = e.target.value;
+    setData(newData);
+  };
+
+  const UpdateMainContent = (e, index) => {
+    const newData = [...data];
+    newData[index].main = e.target.value;
+    setData(newData);
   };
 
   const handleClose = () => {
     setSelectedItemIndex(null);
   };
 
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${notesapi}/archieveData`);
+      setData(response.data);
+      console.log("Response data:", response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
   useEffect(() => {
-    setModalContents(archieveArray.map((item) => item.text));
-    console.log("archieveArray", archieveArray);
-  }, [archieveArray]);
+   
+    fetchData();
+  }, []);
+
+  const handleUnarchive = async () => {
+    // Ensure modalId and selectedItemIndex are defined and valid
+    if (modalId && modalId.length > selectedItemIndex && selectedItemIndex !== null) {
+      try {
+        // Send patch request to unarchive the note
+        const response = await axios.patch(`${notesapi}/${modalId[selectedItemIndex]}/UnArchieveNote`, { isArchieved: false });
+        fetchData();
+        console.log("handleunarchieve", response);
+        return response;
+      } catch (error) {
+        console.error(`Error unarchiving note: ${error.message}`);
+        console.error(error);
+        throw error; // Re-throw the error to handle it outside this function if needed
+      }
+    } else {
+      // Log error if modalId or selectedItemIndex is invalid
+      console.error('Invalid modalId or selectedItemIndex:', modalId, selectedItemIndex);
+    }
+  };
+  
+  
+
+  useEffect(() => {
+    setModalContents(data?.map((item) => item.title));
+    setModalMain(data?.map((item) => item.main))
+    setModalImage(data?.map((item) => item.image))
+    setModalId(data?.map((item) => item._id));
+    console.log("archieveArray", data);
+  }, [data]);
+
   const popover = (
     <Popover id="popover-basic" className={` ${theme}`}>
       <Popover.Body className="p-0">
@@ -51,7 +112,7 @@ export default function Archieve() {
               <a
                 href="#"
                 onClick={() => {
-                  addData();
+                  // addData();
                 }}
               >
                 Delete Note
@@ -110,7 +171,7 @@ export default function Archieve() {
       undo
     </Tooltip>
   );
-  console.log("archieve", archieveArray);
+  console.log("archieve", data);
   return (
     <>
       <Header />
@@ -120,14 +181,14 @@ export default function Archieve() {
             <Sidebar />
           </div>
           <div className="w-100 pt-4 ms-5 d-flex flex-column gap-5 pos-rel-nodata">
-            {archieveArray.length === 0 ? (
+            {data?.length === 0 ? (
               <div className="d-flex  gap-3 nodata flex-column pos-abs-nodata">
                 <IoMdArchive />
                 <p>Your archived notes appear here</p>
               </div>
             ) : (
               <div className="d-flex flex-wrap gap-2 justify-content-start align-items-baseline w-100">
-                {archieveArray?.map((item, index) => (
+                {data?.map((item, index) => (
                   <>
                     <div key={item.id} className="card-flex">
                       <div className="card  " onClick={() => handleShow(index)}>
@@ -207,6 +268,8 @@ export default function Archieve() {
                             <TextareaAutosize
                               className="w-100 border-0"
                               placeholder="Describe yourself here..."
+                              value={modalContents[index]}
+                              onChange={(e) => UpdateTitle(e, index)}
                             />
                           </div>
                         </Modal.Header>
@@ -214,8 +277,8 @@ export default function Archieve() {
                           <TextareaAutosize
                             className="w-100 border-0"
                             placeholder="Describe yourself here..."
-                            value={modalContents[index]}
-                            // onChange={(e) => UpdateContent(e, index)}
+                            value={modalMain[index]}
+                            onChange={(e) => UpdateMainContent(e, index)}
                           />
                         </Modal.Body>
                         <Modal.Footer>
@@ -269,11 +332,7 @@ export default function Archieve() {
                                 overlay={archieveTooltip}
                               >
                                 <span>
-                                  <PiArchiveBox
-                                  // onClick={() =>
-                                  //   dispatch(addDataArchieve(notesArray[index]))
-                                  // }
-                                  />
+                                <PiArchiveBox onClick={() => handleUnarchive(modalId[selectedItemIndex])} />
                                 </span>
                               </OverlayTrigger>
 

@@ -20,14 +20,13 @@ export const fetchNotes = createAsyncThunk(
   "note/getNotes",
   async (_, thunkAPI) => {
     try {
-      const response = await axiosInstance.get(`${notesapi}/getNote`, {
+      const response = await axios.get(`${notesapi}/getNote`, {
         headers: {
           Authorization: `Bearer ${getToken()}`, // Include token in headers
         },
       });
-      console.log("response.data" , response.data);
+      console.log("response.data", response.data);
       return response.data;
-      
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response.data); // Handle error
     }
@@ -42,9 +41,9 @@ export const addNotes = createAsyncThunk(
       formData.append("title", title);
       formData.append("main", main);
       formData.append("image", image);
-      console.log(formData);
+      formData.append("isPinned", false); // Add this line to set isPinned to false
 
-      const response = await axiosInstance.post(`${notesapi}/addNote`, formData, {
+      const response = await axios.post(`${notesapi}/addNote`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -59,7 +58,7 @@ export const updateNote = createAsyncThunk(
   "notes/updateNote",
   async ({ id, newTitle, newText }) => {
     try {
-      const response = await axiosInstance.put(`${notesapi}/UpdateNote/${id}`, {
+      const response = await axios.put(`${notesapi}/UpdateNote/${id}`, {
         title: newTitle,
         main: newText,
       });
@@ -70,12 +69,25 @@ export const updateNote = createAsyncThunk(
   }
 );
 
+export const restoreTrash = createAsyncThunk("notes/restore", async (_id) => {
+  try {
+    const response = await axios.patch(`${notesapi}/${_id}/restore`);
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error restoring note:", error);
+    throw error; // Throw the error to be caught by the rejected action
+  }
+});
+
 export const deleteNote = createAsyncThunk("notes/deleteNote ", async (_id) => {
   try {
-    await axiosInstance.delete(`${notesapi}/deleteNote/${_id}`);
-    return _id; // Return _id upon successful deletion
+    const response = await axios.patch(`${notesapi}/${_id}/deleteData`);
+    console.log(response.data);
+    return response.data;
   } catch (error) {
-    throw error;
+    console.error("Error deleting note:", error);
+    throw error; // Throw the error to be caught by the rejected action
   }
 });
 
@@ -83,7 +95,7 @@ export const archiveNote = createAsyncThunk(
   "notes/archiveNote",
   async (_id) => {
     try {
-      const response = await axiosInstance.patch(`${notesapi}/${_id}/archive/`);
+      const response = await axios.patch(`${notesapi}/${_id}/archive/`);
       console.log(response.data);
       return response.data;
     } catch (error) {
@@ -97,10 +109,63 @@ export const archiveNote = createAsyncThunk(
 export const unarchiveNote = createAsyncThunk(
   "notes/unarchiveNote",
   async (_id) => {
-    const response = await axiosInstance.put(`${notesapi}/${_id}/unarchive/`);
+    const response = await axios.put(`${notesapi}/${_id}/unarchive/`);
     return response.data;
   }
 );
+
+export const deletePermanently = createAsyncThunk(
+  "notes/deletePermanently",
+  async (_id) => {
+    try {
+      const response = await axios.delete(
+        `${notesapi}/${_id}/deletePermanently`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      throw error; // Throw the error to be caught by the rejected action
+    }
+  }
+);
+
+export const addPinned = createAsyncThunk(
+  "notes/addPinnedNote",
+  async (_id) => {
+    try {
+      const response = await axios.patch(`${notesapi}/${_id}/PinnedNote/`);
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error Pinned note:", error);
+      throw error; // Throw the error to be caught by the rejected action
+    }
+  }
+);
+
+export const unPinned = createAsyncThunk(
+  "notes/UnPinnedNote",
+  async (_id) => {
+    try {
+      const response = await axios.patch(`${notesapi}/${_id}/UnPinnedNote/`);
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error Pinned note:", error);
+      throw error; // Throw the error to be caught by the rejected action
+    }
+  }
+);
+
+// export const fetchPinned = createAsyncThunk(
+//   "notes/PinnedData",
+//   async (data) => {
+//     const response = await axios.get(`${notesapi}/PinnedData`, data);
+//     console.log("PinnedData" , response.data);
+//     return response.data;
+//   }
+// );
+
 export const noteSlice = createSlice({
   name: "note",
   initialState,
@@ -117,13 +182,39 @@ export const noteSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
       .addCase(fetchNotes.fulfilled, (state, action) => {
         state.notesArray = action.payload;
       })
       .addCase(fetchNotes.rejected, (state, action) => {
         state.error = state.error.message;
       });
+
+      // builder.addCase(fetchPinned.fulfilled, (state, action) => {
+      //   state.notesArray = action.payload;
+      // });
+
+      
+      builder.addCase(addPinned.fulfilled, (state, action) => {
+        const updatedNotesArray = state.notesArray.map((note) => {
+          if (note._id === action.payload._id) {
+            return { ...note, isPinned: true }; // Set isArchived to true for the archived note
+          }
+          return note;
+        });
+        state.notesArray = updatedNotesArray;
+      });
+  
+
+    builder.addCase(unPinned.fulfilled, (state, action) => {
+      const updatedNotesArray = state.notesArray.map((note) => {
+        if (note._id === action.payload._id) {
+          return { ...note, isPinned: false }; // Update the note's isArchived property
+        }
+        return note;
+      });
+      state.notesArray = updatedNotesArray;
+    });
+
     builder
       .addCase(addNotes.pending, (state, action) => {
         state.loading = true;
@@ -137,6 +228,8 @@ export const noteSlice = createSlice({
         state.loading = false;
         state.error = state.error.message;
       });
+
+
     builder.addCase(updateNote.fulfilled, (state, action) => {
       const updatedNote = action.payload;
       const index = state.notesArray.findIndex(
@@ -147,11 +240,15 @@ export const noteSlice = createSlice({
       }
     });
     builder.addCase(deleteNote.fulfilled, (state, action) => {
-      // Filter out the deleted note from the state
-      state.notesArray = state.notesArray.filter(
-        (item) => item._id !== action.payload
-      );
+      const updatedNotesArray = state.notesArray.map((note) => {
+        if (note._id === action.payload._id) {
+          return { ...note, isTrash: true };
+        }
+        return note;
+      });
+      state.notesArray = updatedNotesArray;
     });
+
     builder.addCase(archiveNote.fulfilled, (state, action) => {
       const updatedNotesArray = state.notesArray.map((note) => {
         if (note._id === action.payload._id) {
@@ -170,6 +267,26 @@ export const noteSlice = createSlice({
         return note;
       });
       state.notesArray = updatedNotesArray;
+    });
+
+    builder.addCase(restoreTrash.fulfilled, (state, action) => {
+      const updatedNotesArray = state.notesArray.map((note) => {
+        if (note._id === action.payload._id) {
+          return { ...note, isTrash: false };
+        }
+        return note;
+      });
+      state.notesArray = updatedNotesArray;
+    });
+
+    builder.addCase(deletePermanently.fulfilled, (state, action) => {
+      state.updateState = false;
+      const index = state.notesArray.findIndex(
+        (note) => note._id === action.payload._id
+      );
+      if (index !== -1) {
+        state.notesArray.splice(index, 1);
+      }
     });
   },
 });

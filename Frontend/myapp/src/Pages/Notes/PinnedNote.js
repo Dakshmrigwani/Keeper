@@ -9,45 +9,102 @@ import Modal from "react-bootstrap/Modal";
 import Popover from "react-bootstrap/Popover";
 import { LuRedo2, LuUndo2 } from "react-icons/lu";
 import { FaBell, FaPalette } from "react-icons/fa";
+import { updateNote } from "../../Slice/NoteSlice";
 import { PiArchiveBox } from "react-icons/pi";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
-import { addData } from "../../Slice/TrashSlice";
+// import { addData } from "../../Slice/TrashSlice";
 import TextareaAutosize from "react-textarea-autosize";
 import { ThemeContext } from "../../Context/ThemeContext";
 import { useSelector, useDispatch } from "react-redux";
 import { removePinnedNote, editPinnedNote } from "../../Slice/NoteSlice";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import { MdContentCopy } from "react-icons/md";
+import Draggable from "react-draggable";
 import axios from "axios";
 
-export default function PinnedNote({ pinnedNote, PinnedTransfer, DeleteData }) {
+export default function PinnedNote({
+  pinnedNote,
+  PinnedTransfer,
+  DeleteData,
+  addPinnedData,
+  unPinnedData,
+  PinnedArray,
+}) {
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [show, setShow] = useState(false);
-  const [data , setData] = useState([]);
- 
-  const dispatch = useDispatch();
+  const [data, setData] = useState([]);
   const [modalContents, setModalContents] = useState([]);
+  const [modalContentsMain, setModalContentsMain] = useState([]);
+  const [modalImage, setModalImage] = useState([]);
+  const [modalId, setModalId] = useState([]);
+  const [createdModal, setCreatedModal] = useState([]);
+  const [copyStatus, setCopyStatus] = useState(false);
+  const dispatch = useDispatch();
+  const [currentRotate, setCurrentRotate] = useState(0);
 
   useEffect(() => {
-    setModalContents(data.map((item) => item.text));
-  }, [data]);
+    setModalContents(PinnedArray.map((item) => item.title));
+    setModalContentsMain(PinnedArray.map((item) => item.main));
+    setCreatedModal(PinnedArray.map((item) => item.createdAt));
+    setModalImage(PinnedArray.map((item) => item.image));
+    setModalId(PinnedArray.map((item) => item._id));
+    console.log("PinnedArray", PinnedArray);
+  }, [PinnedArray]);
+
   const handleShow = (index) => {
     setSelectedItemIndex(index);
+  };
+
+  const onCopyText = () => {
+    setCopyStatus(true);
+    setTimeout(() => setCopyStatus(false), 5000); // Reset status after 2 seconds
   };
 
   const handleClose = () => {
     setSelectedItemIndex(null);
   };
 
+  const formattedDate = (createdAt) => {
+    const date = new Date(createdAt);
+    return date.toLocaleString(undefined, { month: "short", day: "numeric" });
+  };
 
-  axios
-  .get("http://localhost:8080/api/v1/Pinned/getAllPinned")
-  .then((response) => {
-    setData(response.data);
-  })
-  .catch((error) => {
-    console.log(error);
-  });
+  const isDraggingRef = useRef(false);
+
+  const onDrag = () => {
+    isDraggingRef.current = true;
+  };
+
+  const onStop = () => {
+    if (!isDraggingRef.current) {
+      setCurrentRotate(currentRotate + 90);
+    }
+    isDraggingRef.current = false;
+  };
+
+  const UpdateTitle = (e, index) => {
+    // Dispatch the editNote action with the index and new title
+    dispatch(
+      updateNote({
+        id: PinnedArray[index]._id,
+        index,
+        newTitle: e.target.value,
+      })
+    );
+  };
+
+  const UpdateMainContent = (e, index) => {
+    // Dispatch the editNote action with the index and new main content
+    dispatch(
+      updateNote({
+        id: PinnedArray[index]._id,
+        index,
+        newText: e.target.value,
+      })
+    );
+  };
 
   const deleter = () => {
     handleClose();
@@ -69,7 +126,7 @@ export default function PinnedNote({ pinnedNote, PinnedTransfer, DeleteData }) {
       <Popover.Body className="p-0">
         <div>
           <ul className="list-unstyled mb-0 py-3">
-            {data.map((note, index) => (
+            {PinnedArray.map((note, index) => (
               <li key={note.id}>
                 <a
                   href="#"
@@ -136,205 +193,233 @@ export default function PinnedNote({ pinnedNote, PinnedTransfer, DeleteData }) {
   );
   return (
     <>
-      {data?.map((item, index) => (
+      {PinnedArray?.map((item, index) => (
         <>
-          <div key={item.id} className="flex-card">
-            <div className="card card-flex " onClick={() => handleShow(index)}>
-              <div className="card-body">
-                <p className="text-light">{item.main}</p>
-              </div>
-              <div className="card-footer">
-                <div className="d-flex justify-content-center  justify-content-lg-between">
-                  <div className="d-flex justify-content-end gap-4 align-items-center order-1">
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={renderTooltip}
-                    >
-                      <span>
-                        <FaBell />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={collabTooltip}
-                    >
-                      <span>
-                        <MdPeople />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={backTooltip}
-                    >
-                      <span>
-                        <FaPalette />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={imageTooltip}
-                    >
-                      <span>
-                        <MdPhotoSizeSelectActual />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={archieveTooltip}
-                    >
-                      <span>
-                        <PiArchiveBox />
-                      </span>
-                    </OverlayTrigger>
+          <Draggable onStop={onStop} onDrag={onDrag}>
+            <div
+              key={item.id}
+              className="flex-card"
+              style={{ transform: "rotate(" + currentRotate + "deg)" }}
+            >
+              <div
+                className="card card-flex rounded-1"
+                onClick={() => handleShow(index)}
+              >
+                <div className="card-body rounded-1">
+                  <p className="text-light">{item.main}</p>
+                </div>
+                <div className="card-footer">
+                  <div className="d-flex justify-content-center  justify-content-lg-between">
+                    <div className="d-flex justify-content-end gap-4 align-items-center order-1">
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={renderTooltip}
+                      >
+                        <span>
+                          <FaBell />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={collabTooltip}
+                      >
+                        <span>
+                          <MdPeople />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={backTooltip}
+                      >
+                        <span>
+                          <FaPalette />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={imageTooltip}
+                      >
+                        <span>
+                          <MdPhotoSizeSelectActual />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={archieveTooltip}
+                      >
+                        <span>
+                          <PiArchiveBox />
+                        </span>
+                      </OverlayTrigger>
 
-                    <OverlayTrigger
-                      trigger="click"
-                      placement="bottom"
-                      overlay={popover}
-                    >
-                      <span>
-                        <BsThreeDotsVertical />
-                      </span>
-                    </OverlayTrigger>
+                      <OverlayTrigger
+                        trigger="click"
+                        placement="bottom"
+                        overlay={popover}
+                      >
+                        <span>
+                          <BsThreeDotsVertical />
+                        </span>
+                      </OverlayTrigger>
 
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={redoTooltip}
-                    >
-                      <span>
-                        <LuUndo2 />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={undoTooltip}
-                    >
-                      <span>
-                        <LuRedo2 />
-                      </span>
-                    </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={redoTooltip}
+                      >
+                        <span>
+                          <LuUndo2 />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={undoTooltip}
+                      >
+                        <span>
+                          <LuRedo2 />
+                        </span>
+                      </OverlayTrigger>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <Modal
-              show={selectedItemIndex === index}
-              onHide={handleClose}
-              centered
-              className={` ${theme}`}
-            >
-              <Modal.Header>
-                <div className="w-100 minner">
+              <Modal
+                show={selectedItemIndex === index}
+                onHide={handleClose}
+                centered
+                className={` ${theme}`}
+              >
+                <Modal.Header>
+                  <div className="w-100 minner">
+                    <TextareaAutosize
+                      className="w-100 border-0"
+                      placeholder="Describe yourself here..."
+                      value={modalContents[index]} // This is for title
+                      onChange={(e) => UpdateTitle(e, index)} // Separate function for title
+                    />
+                  </div>
+                  <div className="d-flex justify-content-end gap-3 flex-row w-100 align-items-center">
+                    {!copyStatus ? (
+                      <CopyToClipboard
+                        //  text={textToCopy} onCopy={onCopyText}
+                        text={`${modalContents[index]}\n${modalContentsMain[index]}`} // Concatenate title and main content
+                        onCopy={onCopyText}
+                      >
+                        <MdContentCopy />
+                      </CopyToClipboard>
+                    ) : (
+                      <p className="mb-0">Copied!</p>
+                    )}
+                    <MdOutlinePushPin />
+                  </div>
+                </Modal.Header>
+                <Modal.Body>
                   <TextareaAutosize
                     className="w-100 border-0"
                     placeholder="Describe yourself here..."
+                    value={modalContentsMain[index]}
+                    onChange={(e) => UpdateMainContent(e, index)}
                   />
-                </div>
-                <div className="d-flex justify-content-end w-100">
-                  <MdOutlinePushPin onClick={PinnedTransfer} />
-                </div>
-              </Modal.Header>
-              <Modal.Body>
-                <TextareaAutosize
-                  className="w-100 border-0"
-                  placeholder="Describe yourself here..."
-                  value={modalContents[index]}
-                  onChange={(e) => UpdateContent(e, index)}
-                />
-              </Modal.Body>
+                </Modal.Body>
 
-              <Modal.Footer>
-                <div className="d-flex justify-content-center  justify-content-lg-between w-100">
-                  <b className="order-2 d-none d-lg-flex" onClick={handleClose}>
-                    close
-                  </b>
-                  <div className="d-flex justify-content-end gap-4 align-items-center order-1">
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={renderTooltip}
-                    >
-                      <span>
-                        <FaBell />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={collabTooltip}
-                    >
-                      <span>
-                        <MdPeople />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={backTooltip}
-                    >
-                      <span>
-                        <FaPalette />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={imageTooltip}
-                    >
-                      <span>
-                        <MdPhotoSizeSelectActual />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={archieveTooltip}
-                    >
-                      <span>
-                        <PiArchiveBox />
-                      </span>
-                    </OverlayTrigger>
-
-                    <OverlayTrigger
-                      trigger="click"
-                      placement="bottom"
-                      overlay={popover}
-                    >
-                      <span>
-                        <BsThreeDotsVertical />
-                      </span>
-                    </OverlayTrigger>
-
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={redoTooltip}
-                    >
-                      <span>
-                        <LuUndo2 />
-                      </span>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="bottom"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={undoTooltip}
-                    >
-                      <span>
-                        <LuRedo2 />
-                      </span>
-                    </OverlayTrigger>
+                <Modal.Footer>
+                  <div className="">
+                    <span>created date: {formattedDate(item.createdAt)}</span>
                   </div>
-                </div>
-              </Modal.Footer>
-            </Modal>
-          </div>
+                  <div className="d-flex justify-content-center  justify-content-lg-between w-100">
+                    <b
+                      className="order-2 d-none d-lg-flex"
+                      onClick={handleClose}
+                    >
+                      close
+                    </b>
+                    <div className="d-flex justify-content-end gap-4 align-items-center order-1">
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={renderTooltip}
+                      >
+                        <span>
+                          <FaBell />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={collabTooltip}
+                      >
+                        <span>
+                          <MdPeople />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={backTooltip}
+                      >
+                        <span>
+                          <FaPalette />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={imageTooltip}
+                      >
+                        <span>
+                          <MdPhotoSizeSelectActual />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={archieveTooltip}
+                      >
+                        <span>
+                          <PiArchiveBox />
+                        </span>
+                      </OverlayTrigger>
+
+                      <OverlayTrigger
+                        trigger="click"
+                        placement="bottom"
+                        overlay={popover}
+                      >
+                        <span>
+                          <BsThreeDotsVertical />
+                        </span>
+                      </OverlayTrigger>
+
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={redoTooltip}
+                      >
+                        <span>
+                          <LuUndo2 />
+                        </span>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="bottom"
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={undoTooltip}
+                      >
+                        <span>
+                          <LuRedo2 />
+                        </span>
+                      </OverlayTrigger>
+                    </div>
+                  </div>
+                </Modal.Footer>
+              </Modal>
+            </div>
+          </Draggable>
         </>
       ))}
 

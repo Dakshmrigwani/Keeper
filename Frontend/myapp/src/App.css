@@ -164,15 +164,23 @@ body {
   color: var(--text-primary) !important;
 }
 .card-flex .card-footer {
-  display: none;
-}
-.card-flex .card-footer {
   background-color: var(--bg-primary) !important;
   color: var(--text-primary) !important;
   border-radius: 0 0 6px 6px !important;
 }
+.card-flex .card-footer {
+  display:none
+}
 .card-flex.border-footer .card-body {
   border-radius: 6px 6px 0 0 !important;
+}
+.mx-60{
+  max-width: 600px;
+  width: 100%;
+}
+.flex-coler{
+  flex-direction: column;
+  max-width: 600px;
 }
 .pinnedcard b {
   color: var(--text-primary) !important;
@@ -202,7 +210,7 @@ textarea {
   background: #949aa094;
 }
 .card-flex .card-body {
-  border-radius: 6px !important;
+  border-radius: 6px 6px 0 0 !important;
 }
 .card1 .card-body {
   border-radius: 6px !important;

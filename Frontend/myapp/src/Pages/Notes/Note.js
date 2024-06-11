@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Header from "../../inludes/Header";
 import Sidebar from "../../inludes/Sidebar";
 import FirstNote from "./FirstNote/FirstNote";
@@ -6,9 +6,20 @@ import AllNote from "./AllNote";
 import PinnedNote from "./PinnedNote";
 import FilteredData from "./FilteredData";
 import { useDispatch, useSelector } from "react-redux";
-import { addNotes, removeNote, fetchNotes } from "../../Slice/NoteSlice";
-import { addData } from "../../Slice/TrashSlice";
+import {
+  addNotes,
+  removeNote,
+  fetchNotes,
+  deleteNote,
+  // fetchPinned,
+  unPinned,
+  addPinned,
+} from "../../Slice/NoteSlice";
+// import { addData } from "../../Slice/TrashSlice";
 import axios from "axios";
+import { notesapi } from "../../api";
+
+import { LayoutContext } from "../../Context/Layout-note";
 
 export default function Note() {
   const [title, setTitle] = useState(""); // Define and initialize title
@@ -17,12 +28,23 @@ export default function Note() {
   const [data, setData] = useState([]);
   const [inputClicked, setInputClicked] = useState(false);
   const [filterClicked, setFilterClicked] = useState(true);
+  const [PinnedArray, setPinnedArray] = useState([]);
+  const { layout, justify, widther } = useContext(LayoutContext);
   // State to hold the current input data
   const [currentInput, setCurrentInput] = useState("");
 
-  const PinnedArray = useSelector((state) => state.note.PinnedArray);
   const notesArray = useSelector((state) => state.note.notesArray);
   const dispatch = useDispatch();
+
+  const fetchPinnedData = async () => {
+    try {
+      const response = await axios.get(`${notesapi}/PinnedData`);
+      setPinnedArray(response.data);
+      console.log("PinnedArray", response.data);
+    } catch (error) {
+      console.error("Error fetching pinned data:", error);
+    }
+  };
 
   const DataTransfer = () => {
     if (main.trim() !== "" && title.trim() !== "") {
@@ -31,30 +53,50 @@ export default function Note() {
         main: main, // Correctly assign the main content
         image: image, // Correctly assign the image URL or file object
       };
-  
+
       dispatch(addNotes(requestData));
-  
+
       // Clear the input fields and state after dispatching the action
       setMain("");
       setTitle("");
       setImage(null);
     }
   };
-  
+
   useEffect(() => {
     // Fetch reminders when the component mounts
     dispatch(fetchNotes());
   }, []);
 
-  const DeleteData = () => {
-    dispatch(removeNote());
-    dispatch(addData());
+  useEffect(() => {
+    fetchPinnedData();
+  }, []);
+
+  // const PinnedData = () => {
+  //   dispatch(fetchPinned());
+  // };
+
+  const addPinnedData = (_id) => {
+    dispatch(addPinned(_id));
+  };
+
+  const unPinnedData = (_id) => {
+    dispatch(unPinned(_id));
+    // .then(() => {
+    //   dispatch(fetchPinned());
+    // });
+  };
+
+  const DeleteData = (_id) => {
+    dispatch(deleteNote(_id)).then(() => {
+      dispatch(fetchNotes()); // Fetch notes again after archiving
+    });
   };
 
   // Function to handle changes in the current input
   const handleInputChange = (e) => {
     setCurrentInput(e.target.value);
-    const { name, value , files } = e.target;
+    const { name, value, files } = e.target;
     if (name === "title") {
       setTitle(value);
     } else if (name === "main") {
@@ -120,16 +162,24 @@ export default function Note() {
               />
             )}
             <div className=" pinnedcard">
-              <div className="d-flex flex-wrap gap-2 justify-content-start align-items-baseline flex-column">
-                {!inputClicked && data.length > 0 && (
+              <div
+                className={`d-flex flex-wrap gap-2 ${justify} align-items-center flex-column `}
+              >
+                {!inputClicked && PinnedArray.length > 0 && (
                   <>
-                    <b>Pinned</b>
-                    <div className="d-flex flex-row gap-2 w-100">
-                      <PinnedNote
-                        PinnedArray={PinnedArray}
-                        PinnedTransfer={PinnedTransfer}
-                        DeleteData={DeleteData}
-                      />
+                    <div className={`${widther}`}>
+                      <b className="mb-2">Pinned</b>
+                      <div className={`d-flex ${layout} gap-3 w-100 flex-wrap`}>
+                       
+                          <PinnedNote
+                            PinnedArray={PinnedArray}
+                            PinnedTransfer={PinnedTransfer}
+                            DeleteData={DeleteData}
+                            addPinnedData={addPinnedData}
+                            unPinnedData={unPinnedData}
+                          />
+                        
+                      </div>
                     </div>
                   </>
                 )}
@@ -142,6 +192,7 @@ export default function Note() {
                     DataTransfer={DataTransfer}
                     DeleteData={DeleteData}
                     PinnedTransfer={PinnedTransfer}
+                    addPinnedData={addPinnedData}
                   />
                 )}
               </div>

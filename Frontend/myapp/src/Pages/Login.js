@@ -10,6 +10,8 @@ import axios from "axios";
 import { useAuth0 } from "@auth0/auth0-react";
 import { FaGoogle } from "react-icons/fa";
 import axiosInstance from "./axiosInstance";
+import { login, register } from "../Slice/authSlice";
+import {useDispatch} from "react-redux"
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -19,53 +21,24 @@ export default function Login() {
 
   const { loginWithRedirect, logout } = useAuth0();
 
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
+
+  const dispatch = useDispatch()
 
   const handleRegister = async () => {
-    try {
-      const response = await axiosInstance.post(`${userapi}/register`, {
-        email,
-        password,
-        confirmPassword,
-      });
-      setRegistrationMessage(response.data.message);
-      console.log(registrationMessage);
-    } catch (error) {
-      // Handle error
-      console.error("Registration failed:", error);
-    }
+   dispatch(register({ email, password}))
   };
 
-  const handleLogin = async () => {
-    try {
-      const response = await axiosInstance.post(
-        `${userapi}/login`,
-        {
-          email,
-          password,
-        },
-        {withCredentials: true}
-      
-      );
-      console.log(response);
+  const handleLogin = async (e) => {
+  
+    dispatch(login({ email, password })).then((response) => {
+      // Redirect to Note page if login successful
       if (response.status === 200) {
-        // Extract tokens from the response data
-        const { accessToken, refreshToken } = response.data.data;
-
-        // Store tokens in localStorage or any state management solution
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", refreshToken);
-
-        // Redirect to the desired page
-        Navigate("/Note");
+        navigate('/Note'); // Adjust this path based on your route configuration
       }
-      setRegistrationMessage(response.data.message);
-      console.log(registrationMessage);
-    } catch (error) {
-      // Handle error
-      console.error("Login failed:", error);
-    }
+    });
   };
+  
 
   return (
     <>
@@ -84,10 +57,7 @@ export default function Login() {
             <Tab.Pane eventKey="first">
               <Form
                 className="mt-3"
-                onSubmit={(e) => {
-                  e.preventDefault(); // Prevent default form submission
-                  handleLogin(); // Call the handleLogin function
-                }}
+              
               >
                 <Form.Group className="mb-3" controlId="email">
                   <Form.Label>Email</Form.Label>
@@ -107,7 +77,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </Form.Group>
-                <button className="btn btn-primary w-100" type="submit">
+                <button className="btn btn-primary w-100"  onClick={handleLogin}>
                   Submit
                 </button>
                 <div className="mt-3 d-flex flex-column  justify-content-center align-items-center">

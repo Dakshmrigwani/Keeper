@@ -20,17 +20,7 @@ export default function LabelDetail() {
           <div className="">
             <Sidebar />
           </div>
-          {selectedLabel && selectedLabel.map((item)=> {
-            return (
-              <div key={item.id}>
-                <h1>{item.text}</h1>
-              </div>
-            );
-          }) (
-            <div>
-              <h1>{selectedLabel.text}</h1>
-            </div>
-          )}
+     
         </div>
       </div>
     </>

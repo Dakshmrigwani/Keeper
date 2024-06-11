@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useContext } from "react";
 import Modal from "react-bootstrap/Modal";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 import {
   MdPhotoSizeSelectActual,
   MdOutlinePushPin,
   MdPeople,
 } from "react-icons/md";
 import Popover from "react-bootstrap/Popover";
+
+import { MdContentCopy } from "react-icons/md";
 import axios from "axios";
 import { LuRedo2, LuUndo2 } from "react-icons/lu";
 import { FaBell, FaPalette } from "react-icons/fa";
@@ -15,29 +18,34 @@ import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import TextareaAutosize from "react-textarea-autosize";
 import { ThemeContext } from "../../Context/ThemeContext";
-import {
-  updateNote,
-  removeNote,
-  fetchNotes,
-  unarchiveNote,
-  archiveNote,
-} from "../../Slice/NoteSlice";
+import { updateNote, fetchNotes, archiveNote } from "../../Slice/NoteSlice";
 import { savedArchieve } from "../../Slice/ArchieveSlice";
 import { useSelector, useDispatch } from "react-redux";
 import Toast from "react-bootstrap/Toast";
 import { ImCross } from "react-icons/im";
 import "react-dropzone-uploader/dist/styles.css";
 import Dropzone from "react-dropzone-uploader";
+import { CopyToClipboard } from "react-copy-to-clipboard";
 
-export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
+
+export default function AllNote({
+  PinnedTransfer,
+  DataTransfer,
+  DeleteData,
+  addPinnedData,
+}) {
   const notesArray = useSelector((state) => state.note.notesArray);
   const [show, setShow] = useState(false);
+  const [textToCopy, setTextToCopy] = useState(""); // The text you want to copy
+  const [copyStatus, setCopyStatus] = useState(false);
   const dispatch = useDispatch();
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [modalContents, setModalContents] = useState([]);
   const [modalContentsMain, setModalContentsMain] = useState([]);
-  const [modalImage , setModalImage] = useState([])
+  const [modalImage, setModalImage] = useState([]);
+  const [modalId, setModalId] = useState([]);
   const [createdModal, setCreatedModal] = useState([]);
+
 
   const handleShow = (index) => {
     setSelectedItemIndex(index);
@@ -47,13 +55,20 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
     setSelectedItemIndex(null);
   };
 
+  const onCopyText = () => {
+    setCopyStatus(true);
+    setTimeout(() => setCopyStatus(false), 5000); // Reset status after 2 seconds
+  };
+
   useEffect(() => {
     // Fetch reminders when the component mounts
     dispatch(fetchNotes());
   }, [dispatch]);
 
   const sendArchieve = (_id) => {
-    dispatch(archiveNote(_id)); // Pass the id directly to the archiveNote action
+    dispatch(archiveNote(_id)).then(() => {
+      dispatch(fetchNotes()); // Fetch notes again after archiving
+    });
   };
 
   useEffect(() => {
@@ -61,10 +76,12 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
     setModalContentsMain(notesArray.map((item) => item.main));
     setCreatedModal(notesArray.map((item) => item.createdAt));
     setModalImage(notesArray.map((item) => item.image));
+    setModalId(notesArray.map((item) => item._id));
     console.log("notesArray", notesArray);
   }, [notesArray]);
-  const deleter = () => {
-    DeleteData();
+
+  const deleter = (_id) => {
+    DeleteData(_id);
   };
 
   const formattedDate = (createdAt) => {
@@ -117,18 +134,20 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
       <Popover.Body className="p-0">
         <div>
           <ul className="list-unstyled mb-0 py-3">
-            {notesArray.map((note, index) => (
-              <li key={note.id}>
-                <a
-                  href="#"
-                  onClick={() => {
-                    transferToTrash(note.id, index);
-                  }}
-                >
-                  Delete Note
-                </a>
+            {selectedItemIndex !== null && (
+              <li>
+                <div>
+                  <a
+                    href="#"
+                    onClick={() => {
+                      deleter(modalId[selectedItemIndex]);
+                    }}
+                  >
+                    Delete Note
+                  </a>
+                </div>
               </li>
-            ))}
+            )}
             <li>
               <a href="#">Add Label</a>
             </li>
@@ -192,7 +211,7 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
             <div className="card-body p-0">
               <p className="text-light p-2">{item.main}</p>
               <div>
-                <img src={item.image} alt="Image" className="w-100 mx-heiggh"/>
+                <img src={item.image} alt="Image" className="w-100 mx-heiggh" />
               </div>
             </div>
             <div className="card-footer">
@@ -291,21 +310,36 @@ export default function AllNote({ PinnedTransfer, DataTransfer, DeleteData }) {
                   onChange={(e) => UpdateTitle(e, index)} // Separate function for title
                 />
               </div>
-              <div className="d-flex justify-content-end w-100">
-                <MdOutlinePushPin onClick={PinnedTransfer} />
+
+              <div className="d-flex justify-content-end gap-3 flex-row w-100 align-items-center">
+                {!copyStatus ? (
+                  <CopyToClipboard
+                    //  text={textToCopy} onCopy={onCopyText}
+                    text={`${modalContents[index]}\n${modalContentsMain[index]}`} // Concatenate title and main content
+                    onCopy={onCopyText}
+                  >
+                    <MdContentCopy />
+                  </CopyToClipboard>
+                ) : (
+                 <p className="mb-0">Copied!</p>
+                )}
+                <MdOutlinePushPin onClick={() => addPinnedData(modalId[index])}/>
               </div>
             </Modal.Header>
             <Modal.Body>
               <TextareaAutosize
                 className="w-100 border-0"
                 placeholder="Describe yourself here..."
-                value={modalContentsMain[index]} // This is for main content
-                onChange={(e) => UpdateMainContent(e, index)} // Separate function for main content
+                value={modalContentsMain[index]}
+                onChange={(e) => UpdateMainContent(e, index)}
               />
               <a href={modalImage[index]} target="_blank">
-              <img src={modalImage[index]} className="w-100 h-100 max-modalimg object-fit-cover"/>
+                <LazyLoadImage
+                  src={modalImage[index]}
+                  effect="blur"
+                  className="w-100 h-100 max-modalimg object-fit-cover"
+                />
               </a>
-              
             </Modal.Body>
             <Modal.Footer>
               <div className="">

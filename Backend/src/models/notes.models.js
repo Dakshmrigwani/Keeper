@@ -7,11 +7,11 @@ const { Schema } = mongoose;
 
 const notesSchema = new Schema(
   {
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required:true,
-    },
+    // userId: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "User",
+    //   required:true,
+    // },
     title: {
       type: String,
       required: true,
@@ -31,6 +31,10 @@ const notesSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    isPinned:{
+      type: Boolean,
+      default: false,
+    }
   },
   {
     timestamps: true,

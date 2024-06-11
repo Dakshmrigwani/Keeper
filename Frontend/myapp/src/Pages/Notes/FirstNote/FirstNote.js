@@ -32,7 +32,9 @@ export default function FirstNote({
   const [showCard2, setShowCard2] = useState(false);
   const [inputAboveOne, setInputAboveOne] = useState(false); // New state to track input length
   const { theme } = useContext(ThemeContext);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const card2Ref = useRef(null);
+  console.log(image);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -59,14 +61,24 @@ export default function FirstNote({
     setShowCard2(false);
   };
 
-useEffect(() => {
-  if (currentInput && currentInput.length > 0) {
-    setInputAboveOne(true);
-  } else {
-    setInputAboveOne(false);
-  }
-}, [currentInput]);
+  // const addNotesWithProgress = (file) => {
+  //   const config = {
+  //     onUploadProgress: (progressEvent) => {
+  //       const progress = Math.round(
+  //         (progressEvent.loaded * 100) / progressEvent.total
+  //       );
+  //       setUploadProgress(progress);
+  //     },
+  //   };
+  // };
 
+  useEffect(() => {
+    if (currentInput && currentInput.length > 0) {
+      setInputAboveOne(true);
+    } else {
+      setInputAboveOne(false);
+    }
+  }, [currentInput]);
 
   useEffect(() => {
     if (showCard1 && !showCard2 && inputAboveOne) {
@@ -151,6 +163,7 @@ useEffect(() => {
 
           {showCard2 && (
             <div className="card minner card2" ref={card2Ref}>
+              <img src={image?.src} />
               <div className="card-header">
                 <div className="d-flex justify-content-between align-items-center">
                   <TextareaAutosize
@@ -216,7 +229,9 @@ useEffect(() => {
                       <span className="position-relative">
                         <input
                           type="file"
-                          onChange={(e) => setImage(e.target.files[0])}
+                          onChange={(e) => {
+                            setImage(e.target.files[0]);
+                          }}
                           style={{
                             opacity: 0,
                             width: "15px",

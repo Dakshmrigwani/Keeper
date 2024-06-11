@@ -1,109 +1,82 @@
-import React, { useState, useEffect, useRef, useMemo, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Header from "../../inludes/Header";
 import Sidebar from "../../inludes/Sidebar";
-import { removeData, removeAllData } from "../../Slice/TrashSlice";
+import { trashapi } from "../../api";
 import { IoTrashBinSharp } from "react-icons/io5";
 import Popover from "react-bootstrap/Popover";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import { ThemeContext } from "../../Context/ThemeContext";
-import { useSelector, useDispatch } from "react-redux";
-import { removePinnedNote, editPinnedNote } from "../../Slice/NoteSlice";
+import { useDispatch } from "react-redux";
+import {
+  removePinnedNote,
+  editPinnedNote,
+  restoreTrash,
+  deletePermanently,
+} from "../../Slice/NoteSlice";
 import { FaTrashAlt, FaTrash } from "react-icons/fa";
+import axios from "axios";
 
-export default function Trash() {
+const Trash = () => {
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
-  const TrashArray = useSelector((state) => state.Trash.TrashArray);
+  const [trashData, setTrashData] = useState([]);
   const dispatch = useDispatch();
-  const [modalContents, setModalContents] = useState([]);
 
   useEffect(() => {
-    if (TrashArray && TrashArray.length > 0) {
-      setModalContents(TrashArray.map((item) => item.text));
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${trashapi}/getAllTrash`);
+      setTrashData(response.data);
+    } catch (error) {
+      console.error(error);
     }
-  }, [TrashArray]);
-
-  const handleShow = (index) => {
-    setSelectedItemIndex(index);
   };
 
-  const handleClose = () => {
-    setSelectedItemIndex(null);
-  };
-
-  const deleter = () => {
-    handleClose();
-  };
   const { theme } = useContext(ThemeContext);
 
-  const UpdateContent = (e, index) => {
-    // Dispatch the editNote action with the index and new text
-    dispatch(editPinnedNote({ index, newText: e.target.value }));
+  const handleRemoveAllData = async (_id) => {
+    try {
+      await dispatch(deletePermanently(_id));
+      fetchData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  useEffect(() => {
-    // Set a timeout to automatically remove all data after 7 days
-    const timeoutId = setTimeout(() => {
-      handleRemoveAllData();
-    }, 7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
-
-    // Clear the timeout when the component unmounts or when the 7 days are completed
-    return () => clearTimeout(timeoutId);
-  }, []); // Only run this effect once when the component mounts
-
-
-  const handleRemoveAllData = () => {
-    dispatch(removeAllData());
+  const handleRestore = async (_id) => {
+    try {
+      await dispatch(restoreTrash(_id));
+      fetchData();
+    } catch (error) {
+      console.error(error);
+    }
   };
-  const popover = (
-    <Popover id="popover-basic">
-      <Popover.Body className="p-0">
-        <div>
-          <ul className="list-unstyled mb-0 py-3">
-            <li>
-              <a href="#" onClick={deleter}>
-                Delete Note
-              </a>
-            </li>
-            <li>
-              <a href="#">Add Label</a>
-            </li>
-            <li>
-              <a href="#">Add Drawing</a>
-            </li>
-            <li>
-              <a href="#">Make a copy</a>
-            </li>
-            <li>
-              <a href="#">show checkboxes</a>
-            </li>
-          </ul>
-        </div>
-      </Popover.Body>
-    </Popover>
-  );
+
   const renderTooltip = (props) => (
     <Tooltip id="button-tooltip" {...props}>
       Restore
     </Tooltip>
   );
+
   const collabTooltip = (props) => (
     <Tooltip id="collab-tooltip" {...props}>
       Delete
     </Tooltip>
   );
 
-  console.log("Trash", TrashArray);
   return (
     <>
       <Header />
-      <div className=" container-fluid position-fixed h-100">
+      <div className="container-fluid position-fixed h-100">
         <div className="d-flex flex-row">
           <div className="">
             <Sidebar />
           </div>
           <div className="w-100 pt-4 ms-5 d-flex flex-column gap-5 pos-rel-nodata">
-            {!TrashArray.length && TrashArray.length === 0 ? (
+            {!trashData.length ? (
               <div className="d-flex  gap-3 nodata flex-column pos-abs-nodata">
                 <FaTrashAlt />
                 <p>Your Trash appear here</p>
@@ -123,15 +96,17 @@ export default function Trash() {
                     </a>
                   </div>
                   <div className="d-flex w-100 gap-3 flex-wrap">
-                  {TrashArray?.map((item, index) => (
-                    <>
-                      <div key={item.id} className="card-flex">
+                    {trashData?.map((item) => (
+                      <div key={item._id} className="card-flex">
                         <div
                           className="card  border-footer"
-                          onClick={() => handleShow(index)}
+                          onClick={() => setSelectedItemIndex(item._id)}
                         >
                           <div className="card-body">
-                            <p className="text-light">{item.text}</p>
+                            <h5 className="text-light">{item.title}</h5>
+                            <p className="text-light">{item.main}</p>
+                            <img src={item.img} />
+                            {item.image === "" ? null :  <img src={item.image} className="w-100"/>}
                           </div>
                           <div className="card-footer d-flex pt-0">
                             <div className="d-flex justify-content-center  justify-content-lg-between">
@@ -141,7 +116,7 @@ export default function Trash() {
                                   delay={{ show: 250, hide: 400 }}
                                   overlay={renderTooltip}
                                 >
-                                  <span>
+                                  <span onClick={() => handleRestore(item._id)}>
                                     <IoTrashBinSharp />
                                   </span>
                                 </OverlayTrigger>
@@ -150,12 +125,12 @@ export default function Trash() {
                                   delay={{ show: 250, hide: 400 }}
                                   overlay={collabTooltip}
                                 >
-                                  <span>
-                                    <FaTrash
-                                      onClick={() =>
-                                        dispatch(removeData(item.id))
-                                      }
-                                    />
+                                  <span
+                                    onClick={() =>
+                                      handleRemoveAllData(item._id)
+                                    }
+                                  >
+                                    <FaTrash />
                                   </span>
                                 </OverlayTrigger>
                               </div>
@@ -163,8 +138,7 @@ export default function Trash() {
                           </div>
                         </div>
                       </div>
-                    </>
-                  ))}
+                    ))}
                   </div>
                 </div>
               </>
@@ -174,4 +148,6 @@ export default function Trash() {
       </div>
     </>
   );
-}
+};
+
+export default Trash;

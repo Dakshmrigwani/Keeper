@@ -5,23 +5,10 @@ const { Schema } = mongoose;
 
 const editSchema = new Schema(
   {
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required:true,
-    },
-    title: {
+    name: {
       type: String,
       required: true,
     },
-    main: {
-      type: String,
-      required: true,
-    },
-    image:{
-      type:String,
-    }
-   
    
   },
   {
@@ -29,4 +16,4 @@ const editSchema = new Schema(
   }
 );
 
-export const Notes = mongoose.model("Notes", editSchema);
+export const Edit = mongoose.model("Edit", editSchema);

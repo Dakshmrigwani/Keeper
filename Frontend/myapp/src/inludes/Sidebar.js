@@ -10,18 +10,20 @@ import { TiTick } from "react-icons/ti";
 import { MdLabel } from "react-icons/md";
 import Button from "react-bootstrap/Button";
 import { ThemeContext } from "../Context/ThemeContext";
-import { addLabel, removeLabel } from "../Slice/LabelSlice";
+import { getAllEdit, AddEdit } from "../Slice/EditSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { editapi } from "../api";
+
 
 export default function Sidebar() {
   const [show, setShow] = useState(false);
   const { theme } = useContext(ThemeContext);
-  const LabelArray = useSelector((state) => state.Label.LabelArray);
+  const EditArray = useSelector((state) => state.Edit.EditArray);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   const dispatch = useDispatch();
   const [labelCurrent, setLabelCurrent] = useState("");
-  console.log("LabelArray", LabelArray);
+  console.log("Edit Array", EditArray);
   const renderTooltip = (props) => (
     <Tooltip id="button-tooltip" {...props}>
       Notes
@@ -52,11 +54,11 @@ export default function Sidebar() {
       Label
     </Tooltip>
   );
-  const handleAddLabel = () => {
-    // Fix: Dispatch addLabel action with the current label text
-    dispatch(addLabel(labelCurrent));
-    setLabelCurrent(""); // Clear labelCurrent state after adding label
-  };
+  // const handleAddLabel = () => {
+  //   // Fix: Dispatch addLabel action with the current label text
+  //   dispatch(addLabel(labelCurrent));
+  //   setLabelCurrent(""); // Clear labelCurrent state after adding label
+  // };
   return (
     <>
       <div className="position-fixed h-100 ps-2">
@@ -92,7 +94,7 @@ export default function Sidebar() {
               <FaPenFancy size={"20px"} onClick={handleShow} />
             </span>
           </OverlayTrigger>
-          {LabelArray?.map((item) => (
+          {EditArray?.map((item) => (
             <div key={item.id}>
               <Link to={`/AllLabel/${item.id}`} >
                 <OverlayTrigger
@@ -145,11 +147,15 @@ export default function Sidebar() {
         </Modal.Header>
         <Modal.Body>
           <div className="d-flex flex-column gap-3">
-            {LabelArray?.map((item) => (
+            {EditArray?.map((item) => (
               <div key={item.id}>
                 <div className="d-flex flex-row gap-3 LabelModal align-items-center">
                   <span className="fs-6">
-                    <FaTrash onClick={() => dispatch(removeLabel(item.id))} />
+                    <FaTrash 
+                    // onClick={
+                    //   () => dispatch(removeLabel(item.id))
+                    //   }
+                       />
                   </span>
                   <span>{item.text}</span>
                 </div>
@@ -169,7 +175,9 @@ export default function Sidebar() {
                 onChange={(e) => setLabelCurrent(e.target.value)}
               />
               <span>
-                <TiTick size="20px" onClick={handleAddLabel} />
+                <TiTick size="20px" 
+                onClick={dispatch(AddEdit)}
+                 />
               </span>
             </div>
           </div>

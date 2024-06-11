@@ -10,6 +10,8 @@ import { FilteredDataProvider } from "./Context/FilteredDataContext";
 import { Provider } from "react-redux";
 import { store } from "./Store/store";
 import { Auth0Provider } from "@auth0/auth0-react";
+import {LayoutNote} from "./Context/Layout-note"
+
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -21,11 +23,13 @@ root.render(
     }}
   >
     <Provider store={store}>
+      <LayoutNote>
       <FilteredDataProvider>
         <ThemeProvider>
           <App />
         </ThemeProvider>
       </FilteredDataProvider>
+      </LayoutNote>
     </Provider>
   </Auth0Provider>
 );

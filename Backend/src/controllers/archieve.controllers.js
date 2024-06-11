@@ -5,6 +5,7 @@ import { Notes } from "../models/notes.models.js";
 export const addArchieve = AsyncHandler(async (req, res) => {
   try {
     const { main, title } = req.body;
+    console.log(`Received request to add Archieve: ${title} - ${main}`);
     const NewData = new Archieve({
       title: title,
       main: main,
@@ -21,7 +22,7 @@ export const addArchieve = AsyncHandler(async (req, res) => {
 export const getArchieve = AsyncHandler(async (req, res) => {
   try {
 
-    const archieve = await Archieve.find({userId: req.userId}); // Retrieve all data from the Archieve collection
+    const archieve = await Archieve.find({}); // Retrieve all data from the Archieve collection
 
     console.log(archieve);
     res.status(200).json(archieve);

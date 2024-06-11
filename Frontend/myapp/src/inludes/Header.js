@@ -5,7 +5,9 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { MdLogout } from "react-icons/md";
 import { BsFillSunFill, BsMoonFill } from "react-icons/bs";
 import { ThemeContext } from "../Context/ThemeContext";
+import { LayoutContext } from "../Context/Layout-note";
 import { FilteredDataContext } from "../Context/FilteredDataContext";
+import { BsViewStacked } from "react-icons/bs";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 
@@ -14,10 +16,11 @@ export default function Header({
   setFilterClicked,
   handleOutsideClick,
 }) {
-  const { user, loginWithRedirect , isAuthenticated , logout } = useAuth0();
-console.log("current user" , user);
+  const { user, loginWithRedirect, isAuthenticated, logout } = useAuth0();
+  console.log("current user", user);
   const [isActive, setIsActive] = useState(false);
   const { setFilteredData, filteredData } = useContext(FilteredDataContext);
+  const { layout, toggleLayout, toggleJustifier, toggleWidther } = useContext(LayoutContext);
   const FilteredArray = useSelector((state) => state.note.FilteredArray);
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,6 +33,11 @@ console.log("current user" , user);
     setIsActive(!isActive); // Toggle isActive state
   };
 
+  const fullControl = () => {
+    toggleLayout();
+    toggleJustifier();
+    toggleWidther();
+  };
   const handleSearch = (e) => {
     const inputValue = e.target.value.toLowerCase();
     setSearchQuery(inputValue);
@@ -105,16 +113,29 @@ console.log("current user" , user);
                   />
                   <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466" />
                 </svg>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  fill="currentColor"
-                  className="bi bi-columns-gap"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M6 1v3H1V1zM1 0a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1zm14 12v3h-5v-3zm-5-1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1zM6 8v7H1V8zM1 7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm14-6v7h-5V1zm-5-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1z" />
-                </svg>
+                <div className="d-none d-lg-flex">
+                  {layout === "flex-row" ? (
+                    <>
+                    <div onClick={fullControl}>
+                      <BsViewStacked size={24}/>
+                    </div>
+                    
+                    </>
+                  ) : (
+                    <div onClick={fullControl}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="currentColor"
+                      className="bi bi-columns-gap"
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M6 1v3H1V1zM1 0a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1zm14 12v3h-5v-3zm-5-1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1zM6 8v7H1V8zM1 7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm14-6v7h-5V1zm-5-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1z" />
+                    </svg>
+                  </div>
+                  )}
+                </div>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -134,7 +155,9 @@ console.log("current user" , user);
                       className="profiledata"
                     />
 
-                    <a onClick={logout}><MdLogout className="fs-3"/></a>
+                    <a onClick={logout}>
+                      <MdLogout className="fs-3" />
+                    </a>
                   </div>
                 ) : (
                   <span onClick={(e) => loginWithRedirect()}>
