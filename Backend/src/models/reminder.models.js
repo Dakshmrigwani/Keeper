@@ -3,11 +3,11 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const ReminderSchema = new Schema({
-  // userId: {
-  //   type: Schema.Types.ObjectId,
-  //   ref: "User",
-  //   required:true,
-  // },
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required:true,
+  },
   title: {
     type: String,
     required: true,

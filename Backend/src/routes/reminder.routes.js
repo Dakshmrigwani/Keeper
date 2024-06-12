@@ -3,7 +3,9 @@ import { Router } from "express";
 
 import { addReminder, deleteReminder, getAllReminders , archieveReminder , UnArchieveReminder } from "../controllers/reminder.controller.js"; // Import the controller functions
 
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 const router = Router();
+router.use(verifyJWT);
 
 // Define the route for adding a reminder
 router.post("/addReminder", addReminder);
